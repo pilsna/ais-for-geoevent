@@ -1,4 +1,5 @@
-# ais-for-geoevent
+ais-for-geovent
+===============
 
 ArcGIS GeoEvent Processor Inbound Adaptor receiving AIS (Automatic Identification System) messages.
 
