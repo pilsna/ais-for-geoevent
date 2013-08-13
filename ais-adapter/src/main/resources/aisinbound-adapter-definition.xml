@@ -1,0 +1,31 @@
+<adapter name="AisEvent" label="AIS Inbound Adapter" domain="com.esri.ges.adapter.inbound" type="inbound">
+	<description>This adapter can translate AIS messages</description>
+	<geoEventDefinitions>
+		<geoEventDefinition name="AisMessage">
+			<fieldDefinitions>
+				<fieldDefinition name="text" type="String"/>
+				
+				<fieldDefinition name="timestamp" type="Date">
+					<fieldDefinitionTag>
+						<name>TIME_START</name>
+					</fieldDefinitionTag>
+				</fieldDefinition>
+	
+				<fieldDefinition name="location" type="Geometry">
+					<fieldDefinitionTag>
+						<name>GEOMETRY</name>
+					</fieldDefinitionTag>
+				</fieldDefinition>
+				
+				<fieldDefinition name="vessel" type="String">
+					<fieldDefinitionTag>
+						<name>TRACK_ID</name>
+					</fieldDefinitionTag>
+				</fieldDefinition>
+                                <fieldDefinition name="class" type="String" />
+
+			</fieldDefinitions>
+		</geoEventDefinition>
+	</geoEventDefinitions>
+</adapter>
+				

@@ -6,12 +6,18 @@ import com.esri.ges.core.component.ComponentException;
 import com.esri.ges.core.geoevent.FieldException;
 import com.esri.ges.core.geoevent.GeoEvent;
 import com.esri.ges.core.geoevent.GeoEventDefinition;
+import com.esri.ges.messaging.MessagingException;
 import dk.dma.ais.reader.AisReader;
 import java.nio.ByteBuffer;
 import dk.dma.ais.reader.AisReaders;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import dk.dma.ais.message.AisMessage;
+import dk.dma.ais.message.AisMessage21;
+import dk.dma.ais.message.AisPositionMessage;
+import dk.dma.ais.message.AisStaticCommon;
+import dk.dma.ais.message.IVesselPositionMessage;
+import dk.dma.ais.proprietary.IProprietarySourceTag;
 import dk.dma.enav.model.geometry.Position;
 import java.nio.BufferUnderflowException;
 import java.util.logging.Level;
@@ -20,38 +26,89 @@ import dk.dma.enav.util.function.Consumer;
 
 public class AisInboundAdapter extends InboundAdapterBase {
 
+    private static final Logger LOGGER = Logger.getLogger(AisInboundAdapter.class.getName());
+
     public AisInboundAdapter(AdapterDefinition definition) throws ComponentException {
         super(definition);
     }
 
     @Override
-    protected GeoEvent adapt(ByteBuffer buffer, String string) {
+    public void receive(ByteBuffer buffer, String channelId) {
         InputStream stream = new ByteArrayInputStream(buffer.array());
+
         AisReader reader = AisReaders.createReaderFromInputStream(stream);
         reader.registerHandler(new Consumer<AisMessage>() {
             @Override
             public void accept(AisMessage aisMessage) {
                 System.out.println("message id: " + aisMessage.getMsgId());
-                Position position = aisMessage.getValidPosition();
-                
+                GeoEvent event = createGeoEvent(aisMessage);
+                geoEventListener.receive(event);
             }
         });
         reader.start();
         try {
             reader.join();
         } catch (InterruptedException ex) {
-            Logger.getLogger(AisInboundAdapter.class.getName()).log(Level.SEVERE, null, ex);
+            LOGGER.log(Level.SEVERE, null, ex);
         } catch (BufferUnderflowException ex) {
             buffer.reset();
+        }
+
+    }
+
+    private GeoEvent createGeoEvent(AisMessage aisMessage) {
+        GeoEvent event;
+        try {
+            event = geoEventCreator.create(((AdapterDefinition) definition).getGeoEventDefinition("AisMessage").getGuid());
+        } catch (MessagingException ex) {
+            LOGGER.log(Level.SEVERE, null, ex);
             return null;
-        } /*catch (FieldException e) {
-         e.printStackTrace();
-         return null;
-         }*/
+        }
+        try {
+            event.setField("track_id", aisMessage.getMsgId());
 
+            Position position = aisMessage.getValidPosition();
+            int wkid = 4326; //WGS84
+            event.setField("location", spatial.createPoint(position.getLatitude(), position.getLongitude(), wkid));
+            event.setField("class", aisMessage.getClass());
+            if (aisMessage.getSourceTag() != null) {
+                IProprietarySourceTag sourceTag = aisMessage.getSourceTag();
+                event.setField("timestamp", sourceTag.getTimestamp());
+            }
+            addMoreFields(event, aisMessage);
 
+        } catch (FieldException ex) {
+            LOGGER.log(Level.SEVERE, null, ex);
+        }
 
+        return event;
+    }
+
+    @Override
+    protected GeoEvent adapt(ByteBuffer bb, String string) {
         return null;
+    }
 
+    private void addMoreFields(GeoEvent event, AisMessage aisMessage) {
+        // Handle AtoN message
+        if (aisMessage instanceof AisMessage21) {
+            AisMessage21 msg21 = (AisMessage21) aisMessage;
+            LOGGER.log(Level.INFO, "AtoN name: {0}", msg21.getName());
+        }
+        // Handle position messages 1,2 and 3 (class A) by using their shared parent
+        if (aisMessage instanceof AisPositionMessage) {
+            AisPositionMessage posMessage = (AisPositionMessage) aisMessage;
+            LOGGER.log(Level.INFO, "speed over ground: {0}", posMessage.getSog());
+        }
+        // Handle position messages 1,2,3 and 18 (class A and B)  
+        if (aisMessage instanceof IVesselPositionMessage ) {
+            IVesselPositionMessage  posMessage = (IVesselPositionMessage ) aisMessage;
+            LOGGER.log(Level.INFO, "course over ground: {0}", posMessage.getCog());
+        }
+        // Handle static reports for both class A and B vessels (msg 5 + 24)
+        if (aisMessage instanceof AisStaticCommon) {
+            AisStaticCommon staticMessage = (AisStaticCommon) aisMessage;
+            LOGGER.log(Level.INFO, "vessel name: {0}", staticMessage.getName());
+        }
     }
 }
