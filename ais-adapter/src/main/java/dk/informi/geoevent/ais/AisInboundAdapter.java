@@ -10,7 +10,6 @@ import dk.dma.ais.reader.AisReader;
 import java.nio.ByteBuffer;
 import dk.dma.ais.reader.AisReaders;
 import java.io.ByteArrayInputStream;
-import java.io.InputStream;
 import dk.dma.ais.message.AisMessage;
 import dk.dma.ais.message.AisMessage21;
 import dk.dma.ais.message.AisPositionMessage;
@@ -34,8 +33,8 @@ public class AisInboundAdapter extends InboundAdapterBase {
 
     @Override
     public void receive(ByteBuffer buffer, String channelId) {
-        InputStream stream = new ByteArrayInputStream(buffer.array());
-
+        ByteArrayInputStream stream = new ByteArrayInputStream(buffer.array());
+        
         AisReader reader = AisReaders.createReaderFromInputStream(stream);
         reader.registerHandler(new Consumer<AisMessage>() {
             @Override
@@ -48,10 +47,13 @@ public class AisInboundAdapter extends InboundAdapterBase {
         reader.start();
         try {
             reader.join();
+            
         } catch (InterruptedException ex) {
             log.error("buffer was interrupted", ex);
         } catch (BufferUnderflowException ex) {
             log.error("buffer underflow", ex);
+        } finally {
+            reader.stopReader();
             buffer.reset();
         }
 
