@@ -51,14 +51,17 @@ public class AisInboundAdapter extends InboundAdapterBase {
 
         } catch (InterruptedException ex) {
             log.error("buffer was interrupted", ex);
-        } catch (BufferUnderflowException ex) {
-            log.error("buffer underflow", ex);
-        } catch (InvalidMarkException ex) {
-            log.error("Invalid Mark", ex);
-        } finally {
             reader.stopReader();
             buffer.reset();
-        }
+        } catch (BufferUnderflowException ex) {
+            log.error("buffer underflow", ex);
+            reader.stopReader();
+            buffer.reset();
+        } catch (InvalidMarkException ex) {
+            log.error("Invalid Mark", ex);
+            reader.stopReader();
+            buffer.reset();
+        } 
 
     }
     // Returns an input stream for a ByteBuffer.
