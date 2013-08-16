@@ -9,7 +9,6 @@ import com.esri.ges.messaging.MessagingException;
 import dk.dma.ais.reader.AisReader;
 import java.nio.ByteBuffer;
 import dk.dma.ais.reader.AisReaders;
-import java.io.ByteArrayInputStream;
 import dk.dma.ais.message.AisMessage;
 import dk.dma.ais.message.AisMessage21;
 import dk.dma.ais.message.AisPositionMessage;
@@ -19,6 +18,8 @@ import dk.dma.ais.proprietary.IProprietarySourceTag;
 import dk.dma.enav.model.geometry.Position;
 import java.nio.BufferUnderflowException;
 import dk.dma.enav.util.function.Consumer;
+import java.io.IOException;
+import java.io.InputStream;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -33,9 +34,9 @@ public class AisInboundAdapter extends InboundAdapterBase {
 
     @Override
     public void receive(ByteBuffer buffer, String channelId) {
-        ByteArrayInputStream stream = new ByteArrayInputStream(buffer.array());
+        InputStream inputStream = newInputStream(buffer);
         
-        AisReader reader = AisReaders.createReaderFromInputStream(stream);
+        AisReader reader = AisReaders.createReaderFromInputStream(inputStream);
         reader.registerHandler(new Consumer<AisMessage>() {
             @Override
             public void accept(AisMessage aisMessage) {
@@ -47,7 +48,7 @@ public class AisInboundAdapter extends InboundAdapterBase {
         reader.start();
         try {
             reader.join();
-            
+
         } catch (InterruptedException ex) {
             log.error("buffer was interrupted", ex);
         } catch (BufferUnderflowException ex) {
@@ -57,6 +58,27 @@ public class AisInboundAdapter extends InboundAdapterBase {
             buffer.reset();
         }
 
+    }
+    // Returns an input stream for a ByteBuffer.
+    // The read() methods use the relative ByteBuffer get() methods.
+    public static InputStream newInputStream(final ByteBuffer buf) {
+        return new InputStream() {
+            @Override
+            public synchronized int read() throws IOException {
+                if (!buf.hasRemaining()) {
+                    return -1;
+                }
+                return buf.get();
+            }
+
+            @Override
+            public synchronized int read(byte[] bytes, int off, int len) throws IOException {
+                // Read only what's left
+                len = Math.min(len, buf.remaining());
+                buf.get(bytes, off, len);
+                return len;
+            }
+        };
     }
 
     @Override
