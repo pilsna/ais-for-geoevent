@@ -1,29 +1,50 @@
-<adapter name="AisEvent" label="AIS Inbound Adapter" domain="com.esri.ges.adapter.inbound" type="inbound">
+<adapter name="aisInputAdapter" label="AIS Inbound Adapter" domain="com.esri.ges.adapter.inbound" type="inbound">
 	<description>This adapter can translate AIS messages</description>
 	<geoEventDefinitions>
-		<geoEventDefinition name="AisMessage">
+            		<geoEventDefinition  name="IGAisMessage" >
 			<fieldDefinitions>
-				<fieldDefinition name="text" type="String"/>
-				
-				<fieldDefinition name="timestamp" type="Date">
+				<fieldDefinition name="CreationTime" type="Date" cardinality="One">
 					<fieldDefinitionTag>
 						<name>TIME_START</name>
 					</fieldDefinitionTag>
+					<fieldDefinitions/>
 				</fieldDefinition>
-	
-				<fieldDefinition name="location" type="Geometry">
+				<fieldDefinition name="Geoevent" type="String" cardinality="One">
+					<fieldDefinitions/>
+				</fieldDefinition>
+				<fieldDefinition name="Vesselname" type="String" cardinality="One">
+					<fieldDefinitions/>
+				</fieldDefinition>
+				<fieldDefinition name="AISMessageType" type="Short" cardinality="One">
+					<fieldDefinitions/>
+				</fieldDefinition>
+				<fieldDefinition name="MMSI" type="Integer" cardinality="One">
+                                    <fieldDefinitionTag>
+                                        <name>TRACK_ID</name>   
+                                    </fieldDefinitionTag>
+                                    <fieldDefinitions/>
+				</fieldDefinition>
+				<fieldDefinition name="MID" type="Integer" cardinality="One">
+					<fieldDefinitions/>
+				</fieldDefinition>
+				<fieldDefinition name="Speed" type="Double" cardinality="One">
+					<fieldDefinitions/>
+				</fieldDefinition>
+				<fieldDefinition name="Longitude" type="Double" cardinality="One">
+					<fieldDefinitions/>
+				</fieldDefinition>
+				<fieldDefinition name="Latitude" type="Double" cardinality="One">
+					<fieldDefinitions/>
+				</fieldDefinition>
+				<fieldDefinition name="CourseOverGround" type="Double" cardinality="One">
+					<fieldDefinitions/>
+				</fieldDefinition>
+				<fieldDefinition name="shape" type="Geometry" cardinality="One">
 					<fieldDefinitionTag>
 						<name>GEOMETRY</name>
 					</fieldDefinitionTag>
+					<fieldDefinitions/>
 				</fieldDefinition>
-				
-				<fieldDefinition name="vessel" type="String">
-					<fieldDefinitionTag>
-						<name>TRACK_ID</name>
-					</fieldDefinitionTag>
-				</fieldDefinition>
-                                <fieldDefinition name="class" type="String" />
-
 			</fieldDefinitions>
 		</geoEventDefinition>
 	</geoEventDefinitions>

@@ -14,12 +14,13 @@ import dk.dma.ais.message.AisMessage21;
 import dk.dma.ais.message.AisPositionMessage;
 import dk.dma.ais.message.AisStaticCommon;
 import dk.dma.ais.message.IVesselPositionMessage;
-import dk.dma.ais.proprietary.IProprietarySourceTag;
 import dk.dma.enav.model.geometry.Position;
 import java.nio.BufferUnderflowException;
 import dk.dma.enav.util.function.Consumer;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.InvalidMarkException;
+import java.util.Date;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -40,7 +41,6 @@ public class AisInboundAdapter extends InboundAdapterBase {
         reader.registerHandler(new Consumer<AisMessage>() {
             @Override
             public void accept(AisMessage aisMessage) {
-                System.out.println("message id: " + aisMessage.getMsgId());
                 GeoEvent event = createGeoEvent(aisMessage);
                 geoEventListener.receive(event);
             }
@@ -53,6 +53,8 @@ public class AisInboundAdapter extends InboundAdapterBase {
             log.error("buffer was interrupted", ex);
         } catch (BufferUnderflowException ex) {
             log.error("buffer underflow", ex);
+        } catch (InvalidMarkException ex) {
+            log.error("Invalid Mark", ex);
         } finally {
             reader.stopReader();
             buffer.reset();
@@ -93,23 +95,18 @@ public class AisInboundAdapter extends InboundAdapterBase {
     private GeoEvent createGeoEvent(AisMessage aisMessage) {
         GeoEvent event;
         try {
-            event = geoEventCreator.create(((AdapterDefinition) definition).getGeoEventDefinition("AisMessage").getGuid());
+            event = geoEventCreator.create(((AdapterDefinition) definition).getGeoEventDefinition("IGAisMessage").getGuid());
         } catch (MessagingException ex) {
-            log.error("could not create AisEvent from xml", ex);
+            log.error("could not create AisInputAdapter from xml", ex);
             return null;
         }
         try {
-            event.setField("track_id", aisMessage.getMsgId());
+            event.setField("MID", aisMessage.getMsgId());
+            event.setField("MMSI", aisMessage.getUserId());
+            
+            event.setField("CreationTime", new Date());
 
-            Position position = aisMessage.getValidPosition();
-            int wkid = 4326; //WGS84
-            event.setField("location", spatial.createPoint(position.getLatitude(), position.getLongitude(), wkid));
-            event.setField("class", aisMessage.getClass());
-            if (aisMessage.getSourceTag() != null) {
-                IProprietarySourceTag sourceTag = aisMessage.getSourceTag();
-                event.setField("timestamp", sourceTag.getTimestamp());
-            }
-            addMoreFields(event, aisMessage);
+            addSubtypeFields(event, aisMessage);
 
         } catch (FieldException ex) {
             log.error("Could not set a field on the GeoEvent.", ex);
@@ -123,7 +120,7 @@ public class AisInboundAdapter extends InboundAdapterBase {
         return null;
     }
 
-    private void addMoreFields(GeoEvent event, AisMessage aisMessage) {
+    private void addSubtypeFields(GeoEvent event, AisMessage aisMessage) throws FieldException {
         // Handle AtoN message
         if (aisMessage instanceof AisMessage21) {
             AisMessage21 msg21 = (AisMessage21) aisMessage;
@@ -132,17 +129,41 @@ public class AisInboundAdapter extends InboundAdapterBase {
         // Handle position messages 1,2 and 3 (class A) by using their shared parent
         if (aisMessage instanceof AisPositionMessage) {
             AisPositionMessage posMessage = (AisPositionMessage) aisMessage;
-            log.info("speed over ground: " + posMessage.getSog());
+            event.setField("Speed", posMessage.getSog());
+            Position position = posMessage.getValidPosition();
+            int wkid = 4326; //WGS84
+            if (position != null){
+                event.setField("shape", spatial.createPoint(position.getLongitude(), position.getLatitude(), wkid));
+            }
+            event.setField("CourseOverGround", posMessage.getCog());
+            
         }
         // Handle position messages 1,2,3 and 18 (class A and B)  
         if (aisMessage instanceof IVesselPositionMessage) {
             IVesselPositionMessage posMessage = (IVesselPositionMessage) aisMessage;
-            log.info("course over ground: " + posMessage.getCog());
+            event.setField("CourseOverGround", posMessage.getCog());
         }
         // Handle static reports for both class A and B vessels (msg 5 + 24)
         if (aisMessage instanceof AisStaticCommon) {
             AisStaticCommon staticMessage = (AisStaticCommon) aisMessage;
-            log.info("vessel name: " + staticMessage.getName());
+            event.setField("Vesselname", staticMessage.getName());
         }
+        /*if (aisMessage.getSourceTag() != null) {
+            IProprietarySourceTag sourceTag = aisMessage.getSourceTag();
+            event.setField("timestamp", sourceTag.getTimestamp());
+        }*/
+        /**
+            <fieldDefinition name="CreationTime" type="Date" cardinality="One"><name>TIME_START</name>
+            <fieldDefinition name="Geoevent" type="String" cardinality="One">
+            <fieldDefinition name="Vesselname" type="String" cardinality="One">
+            <fieldDefinition name="AISMessageType" type="Short" cardinality="One">
+            <fieldDefinition name="MMSI" type="Integer" cardinality="One">
+            <fieldDefinition name="MID" type="Integer" cardinality="One">
+            <fieldDefinition name="Speed" type="Double" cardinality="One">
+            <fieldDefinition name="Longitude" type="Double" cardinality="One">
+            <fieldDefinition name="Latitude" type="Double" cardinality="One">
+            <fieldDefinition name="CourseOverGround" type="Double" cardinality="One">
+            <fieldDefinition name="shape" type="Geometry" cardinality="One">
+         */
     }
 }
