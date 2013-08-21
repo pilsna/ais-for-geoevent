@@ -42,7 +42,9 @@ public class AisInboundAdapter extends InboundAdapterBase {
             @Override
             public void accept(AisMessage aisMessage) {
                 GeoEvent event = createGeoEvent(aisMessage);
-                geoEventListener.receive(event);
+                if (event != null) {
+                    geoEventListener.receive(event);
+                } 
             }
         });
         reader.start();
@@ -108,7 +110,7 @@ public class AisInboundAdapter extends InboundAdapterBase {
             event.setField("MMSI", aisMessage.getUserId());
             
             event.setField("CreationTime", new Date());
-
+            
             addSubtypeFields(event, aisMessage);
 
         } catch (FieldException ex) {
@@ -133,40 +135,28 @@ public class AisInboundAdapter extends InboundAdapterBase {
         if (aisMessage instanceof AisPositionMessage) {
             AisPositionMessage posMessage = (AisPositionMessage) aisMessage;
             event.setField("Speed", posMessage.getSog());
+            log.debug("Speed: " + posMessage.getSog());
             Position position = posMessage.getValidPosition();
             int wkid = 4326; //WGS84
             if (position != null){
                 event.setField("shape", spatial.createPoint(position.getLongitude(), position.getLatitude(), wkid));
             }
             event.setField("CourseOverGround", posMessage.getCog());
+            log.debug("CourseOverGround: " + posMessage.getCog());
             
         }
         // Handle position messages 1,2,3 and 18 (class A and B)  
         if (aisMessage instanceof IVesselPositionMessage) {
             IVesselPositionMessage posMessage = (IVesselPositionMessage) aisMessage;
             event.setField("CourseOverGround", posMessage.getCog());
+            log.debug("CourseOverGround: " + posMessage.getCog());
         }
         // Handle static reports for both class A and B vessels (msg 5 + 24)
         if (aisMessage instanceof AisStaticCommon) {
             AisStaticCommon staticMessage = (AisStaticCommon) aisMessage;
             event.setField("Vesselname", staticMessage.getName());
+            log.debug("Vesselname: " + staticMessage.getName());
         }
-        /*if (aisMessage.getSourceTag() != null) {
-            IProprietarySourceTag sourceTag = aisMessage.getSourceTag();
-            event.setField("timestamp", sourceTag.getTimestamp());
-        }*/
-        /**
-            <fieldDefinition name="CreationTime" type="Date" cardinality="One"><name>TIME_START</name>
-            <fieldDefinition name="Geoevent" type="String" cardinality="One">
-            <fieldDefinition name="Vesselname" type="String" cardinality="One">
-            <fieldDefinition name="AISMessageType" type="Short" cardinality="One">
-            <fieldDefinition name="MMSI" type="Integer" cardinality="One">
-            <fieldDefinition name="MID" type="Integer" cardinality="One">
-            <fieldDefinition name="Speed" type="Double" cardinality="One">
-            <fieldDefinition name="Longitude" type="Double" cardinality="One">
-            <fieldDefinition name="Latitude" type="Double" cardinality="One">
-            <fieldDefinition name="CourseOverGround" type="Double" cardinality="One">
-            <fieldDefinition name="shape" type="Geometry" cardinality="One">
-         */
+
     }
 }
