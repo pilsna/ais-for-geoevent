@@ -3,8 +3,6 @@ ais-for-geovent
 
 ArcGIS GeoEvent Processor Inbound Adaptor receiving AIS (Automatic Identification System) messages.
 
-![App](twitter-for-geoevent.png?raw=true)
-
 ## Features
 * AIS Inbound Adapter
 
@@ -16,8 +14,8 @@ Building the source code:
 2. Run 'mvn install -Dcontact.address=[YourContactEmailAddress]'
 
 Installing the built jar files:
-
-1. Copy the *.jar files under the 'target' sub-folder(s) into the [ArcGIS-GeoEvent-Processor-Install-Directory]/deploy folder.
+1. Download a [zip of jars](dist/ais-for-geoevent.zip?raw=true).
+2. Copy the *.jar files under the 'target' sub-folder(s) into the [ArcGIS-GeoEvent-Processor-Install-Directory]/deploy folder.
 
 ## Requirements
 
