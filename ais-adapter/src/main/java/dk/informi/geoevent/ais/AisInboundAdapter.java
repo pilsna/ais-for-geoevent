@@ -82,8 +82,14 @@ public class AisInboundAdapter extends InboundAdapterBase {
             public synchronized int read(byte[] bytes, int off, int len) throws IOException {
                 // Read only what's left
                 len = Math.min(len, buf.remaining());
+                
                 buf.get(bytes, off, len);
-                return len;
+                
+                if (len == 0) {
+                    return -1;
+                } else {
+                    return len;
+                }
             }
         };
     }
@@ -134,22 +140,25 @@ public class AisInboundAdapter extends InboundAdapterBase {
         // Handle position messages 1,2 and 3 (class A) by using their shared parent
         if (aisMessage instanceof AisPositionMessage) {
             AisPositionMessage posMessage = (AisPositionMessage) aisMessage;
-            event.setField("Speed", posMessage.getSog());
-            log.debug("Speed: " + posMessage.getSog());
+            double speed = posMessage.getSog() / 10;
+            event.setField("Speed", speed );
+            log.debug("Speed: " + speed);
             Position position = posMessage.getValidPosition();
             int wkid = 4326; //WGS84
             if (position != null){
                 event.setField("shape", spatial.createPoint(position.getLongitude(), position.getLatitude(), wkid));
             }
-            event.setField("CourseOverGround", posMessage.getCog());
-            log.debug("CourseOverGround: " + posMessage.getCog());
+            double courseOverGround = posMessage.getCog() / 10;
+            event.setField("CourseOverGround", courseOverGround);
+            log.debug("CourseOverGround: " + courseOverGround);
             
         }
         // Handle position messages 1,2,3 and 18 (class A and B)  
         if (aisMessage instanceof IVesselPositionMessage) {
             IVesselPositionMessage posMessage = (IVesselPositionMessage) aisMessage;
-            event.setField("CourseOverGround", posMessage.getCog());
-            log.debug("CourseOverGround: " + posMessage.getCog());
+            double courseOverGround = posMessage.getCog() / 10;
+            event.setField("CourseOverGround", courseOverGround);
+            log.debug("CourseOverGround: " + courseOverGround);
         }
         // Handle static reports for both class A and B vessels (msg 5 + 24)
         if (aisMessage instanceof AisStaticCommon) {
