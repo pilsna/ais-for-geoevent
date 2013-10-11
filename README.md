@@ -27,7 +27,7 @@ Installing the built jar files:
 
 ## Resources
 
-* [ArcGIS GeoEvent Processor for Server Resource Center](http://resources.arcgis.com/en/communities/geoevent)
+* [ArcGIS Help 10.2: GeoEvent Processor extension](http://resources.arcgis.com/en/help/main/10.2/index.html#//015400000655000000)
 
 ## Issues
 
