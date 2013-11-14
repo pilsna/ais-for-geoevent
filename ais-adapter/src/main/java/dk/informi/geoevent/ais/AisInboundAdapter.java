@@ -5,6 +5,8 @@ import com.esri.ges.adapter.InboundAdapterBase;
 import com.esri.ges.core.component.ComponentException;
 import com.esri.ges.core.geoevent.FieldException;
 import com.esri.ges.core.geoevent.GeoEvent;
+import com.esri.ges.core.geoevent.GeoEventDefinition;
+import com.esri.ges.manager.geoeventdefinition.GeoEventDefinitionManagerException;
 import com.esri.ges.messaging.MessagingException;
 import dk.dma.ais.reader.AisReader;
 import java.nio.ByteBuffer;
@@ -21,6 +23,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.InvalidMarkException;
 import java.util.Date;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -105,10 +109,19 @@ public class AisInboundAdapter extends InboundAdapterBase {
 
     private GeoEvent createGeoEvent(AisMessage aisMessage) {
         GeoEvent event;
+        AdapterDefinition def = (AdapterDefinition) definition;
+        GeoEventDefinition geoDef = def.getGeoEventDefinition("IGAisMessage");
         try {
-            event = geoEventCreator.create(((AdapterDefinition) definition).getGeoEventDefinition("IGAisMessage").getGuid());
+            if (geoEventCreator.getGeoEventDefinitionManager().searchGeoEventDefinition(geoDef.getName(), geoDef.getOwner()) == null) {
+              geoEventCreator.getGeoEventDefinitionManager().addGeoEventDefinition(geoDef);
+            }
+            event = geoEventCreator.create(geoDef.getName(), geoDef.getOwner());
+                //event = geoEventCreator.create(((AdapterDefinition) definition).getGeoEventDefinition("IGAisMessage").getGuid());
         } catch (MessagingException ex) {
-            log.error("could not create AisInputAdapter from xml", ex);
+            log.error("Could not create IGAisMessage GeoEvent", ex);
+            return null;
+        } catch (GeoEventDefinitionManagerException ex) {
+            log.error("Could not create IGAisMessage GeoEvent.", ex);
             return null;
         }
         try {
