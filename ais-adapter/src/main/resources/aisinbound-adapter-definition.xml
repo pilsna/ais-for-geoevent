@@ -1,4 +1,4 @@
-<adapter name="aisInputAdapter" label="AIS Inbound Adapter" domain="com.esri.ges.adapter.inbound" type="inbound">
+<adapter name="aisInputAdapter" label="AIS Inbound Adapter" domain="dk.informi.geoevent.ais.adapter.inbound" type="inbound">
 	<description>This adapter can translate AIS messages</description>
 	<geoEventDefinitions>
             		<geoEventDefinition  name="IGAisMessage" >

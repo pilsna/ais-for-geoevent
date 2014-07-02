@@ -24,11 +24,9 @@ public class AisInboundAdapterService extends AdapterServiceBase {
         AisInboundAdapter adapter = null;
         try {
             return new AisInboundAdapter(definition);
-        } catch (Exception exception){
+        } catch (ComponentException exception){
             log.error(exception);
-            if (exception instanceof ComponentException)
             throw (ComponentException) exception;
         }
-        return adapter;
     }
 }

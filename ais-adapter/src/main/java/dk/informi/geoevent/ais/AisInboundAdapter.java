@@ -23,8 +23,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.InvalidMarkException;
 import java.util.Date;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -37,8 +35,9 @@ public class AisInboundAdapter extends InboundAdapterBase {
         log.info("Created AisInboundAdapter.");
     }
 
+
     @Override
-    public void receive(ByteBuffer buffer, String channelId) {
+    protected GeoEvent adapt(ByteBuffer buffer, String string) {
         InputStream inputStream = newInputStream(buffer);
         
         AisReader reader = AisReaders.createReaderFromInputStream(inputStream);
@@ -67,8 +66,9 @@ public class AisInboundAdapter extends InboundAdapterBase {
             log.error("Invalid Mark", ex);
             reader.stopReader();
             buffer.reset();
-        } 
+        }
 
+        return null;
     }
     // Returns an input stream for a ByteBuffer.
     // The read() methods use the relative ByteBuffer get() methods.
@@ -137,11 +137,6 @@ public class AisInboundAdapter extends InboundAdapterBase {
         }
 
         return event;
-    }
-
-    @Override
-    protected GeoEvent adapt(ByteBuffer bb, String string) {
-        return null;
     }
 
     private void addSubtypeFields(GeoEvent event, AisMessage aisMessage) throws FieldException {
