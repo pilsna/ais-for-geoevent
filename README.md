@@ -15,8 +15,8 @@ Building the source code:
 
 Installing the built jar files:
 
-1. Download a [zip of jars](dist/ais-for-geoevent.zip?raw=true).
-2. Copy the .jar files under the 'target' sub-folders into the [ArcGIS-GeoEvent-Processor-Install-Directory]/deploy folder.
+1. Download a [zip of jars](dist/ais-for-geoevent-1.1.0.zip?raw=true).
+2. Copy the jar files into the [ArcGIS-GeoEvent-Processor-Install-Directory]/deploy folder.
 
 ## Requirements
 
